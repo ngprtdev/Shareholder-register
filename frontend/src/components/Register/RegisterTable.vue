@@ -5,23 +5,21 @@
       v-for="event in sortedEvents"
       :key="event.id"
     >
-      <RegisterItem
-        :event="event"
-        v-if="!(event.type === 'EMISSION' && event.stock === 'AGA')"
-      />
+      <RegisterItem :event="event" />
     </ul>
   </div>
 </template>
 
 <script lang="ts">
-import { computed } from "vue";
+import { computed, PropType } from "vue";
 import RegisterItem from "./RegisterItem.vue";
+import { Event } from "../../types/event.types";
 
 export default {
   components: { RegisterItem },
   props: {
     events: {
-      type: Array,
+      type: Array as PropType<Event[]>,
       required: true,
     },
   },
@@ -31,7 +29,6 @@ export default {
         .slice()
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     );
-
     return {
       sortedEvents,
     };

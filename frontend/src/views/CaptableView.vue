@@ -14,49 +14,85 @@
         </tr>
       </thead>
       <tbody>
-        <CaptableList :captable="captable" />
+        <CaptableList :captable="validatedResults" />
       </tbody>
     </table>
+    <p v-if="validationError" class="text-red-500 mt-[10px]">
+      {{ validationError }}
+    </p>
   </div>
 </template>
 
 <script lang="ts">
-import { computed } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { useEventStore } from "../stores/eventStore";
 import CaptableList from "../components/Captable/CaptableList.vue";
+import axios from "axios";
 
 export default {
   components: { CaptableList },
   setup() {
     const eventStore = useEventStore();
 
-    const captable = computed(() => {
-      return eventStore.shareholders
-        .filter(
-          (shareholder) =>
-            shareholder.Actions > 0 ||
-            shareholder.BSA > 0 ||
-            shareholder.BSPCE > 0 ||
-            shareholder.AGA > 0
-        )
-        .map((shareholder) => {
-          const FDPercentage = eventStore.calculateFDPercentage(shareholder);
-          const NFDPercentage = eventStore.calculateNFDPercentage(shareholder);
+    const validationError = ref<string | null>(null);
+    const validatedResults = ref<any[]>([]);
 
-          return {
+    const validateCaptable = async () => {
+      try {
+        validationError.value = null;
+
+        const captableData = eventStore.shareholders
+          .filter(
+            (shareholder) =>
+              shareholder.Actions > 0 ||
+              shareholder.BSA > 0 ||
+              shareholder.BSPCE > 0 ||
+              shareholder.AGA > 0
+          )
+          .map((shareholder) => ({
             contact: shareholder.contact,
-            actions: shareholder.Actions,
-            BSA: shareholder.BSA,
-            BSPCE: shareholder.BSPCE,
-            AGA: shareholder.AGA,
-            FDPercentage,
-            NFDPercentage,
-          };
-        });
+            titles: [
+              { name: "Actions", quantity: shareholder.Actions },
+              { name: "BSA", quantity: shareholder.BSA },
+              { name: "BSPCE", quantity: shareholder.BSPCE },
+              { name: "AGA", quantity: shareholder.AGA },
+            ],
+            FDQuantity: eventStore.calculateFDPercentage(shareholder),
+            NFDQuantity: eventStore.calculateNFDPercentage(shareholder),
+          }));
+
+        const result = await axios.post(
+          "http://localhost:3000/captable/validate",
+          captableData
+        );
+
+        validatedResults.value = result.data;
+      } catch (error: any) {
+        console.error(
+          "Erreur lors de la validation :",
+          error.response?.data?.message || error.message
+        );
+        validationError.value =
+          error.response?.data?.message ||
+          "Erreur lors de la validation des données.";
+      }
+    };
+
+    watch(
+      () => eventStore.shareholders,
+      () => {
+        validateCaptable();
+      },
+      { deep: true, immediate: true }
+    );
+
+    onMounted(() => {
+      validateCaptable();
     });
 
     return {
-      captable,
+      validatedResults,
+      validationError,
     };
   },
 };

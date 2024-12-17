@@ -1,9 +1,14 @@
+export class CaptableTitle {
+  name!: string;
+  quantity!: number;
+}
+
 export class CaptableResponse {
-    contact!: string;
+  contact!: string;
 
-    titles!: string[]
+  titles!: CaptableTitle[];
 
-    FDQuantity!: number;
+  FDQuantity!: number;
 
-    NFDQuantity!: number;
+  NFDQuantity!: number;
 }
