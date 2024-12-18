@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="submitForm">
-    <div>
-      <label>Type:</label>
+    <div class="mb-2 flex gap-4">
+      <label class="font-medium text-lg">Type:</label>
       <select v-model="form.type">
         <option value="ISSUANCE">Souscription / Attribution</option>
         <option value="EXERCISE">Exercice / Acquisition</option>
@@ -9,13 +9,13 @@
       </select>
     </div>
 
-    <div>
-      <label>Date:</label>
+    <div class="mb-2 flex gap-4">
+      <label class="font-medium text-lg">Date:</label>
       <input type="date" v-model="form.date" />
     </div>
 
-    <div>
-      <label>Titre:</label>
+    <div class="mb-2 flex gap-4">
+      <label class="font-medium text-lg">Titre:</label>
       <select v-model="form.stock" :disabled="isDisabled">
         <option v-for="option in availableStocks" :key="option" :value="option">
           {{ option }}
@@ -23,42 +23,49 @@
       </select>
     </div>
 
-    <div>
-      <label>Quantité:</label>
+    <div class="mb-2 flex gap-4">
+      <label class="font-medium text-lg">Quantité:</label>
       <input type="number" v-model="form.quantity" min="1" />
     </div>
 
-    <div>
-      <label>Prix unitaire:</label>
+    <div class="mb-2 flex gap-4">
+      <label class="font-medium text-lg">Prix unitaire:</label>
       <input type="number" v-model="form.unitPrice" min="0" step="0.01" />
     </div>
 
-    <div v-if="form.type === 'TRANSFER'">
-      <label>Cédant:</label>
-      <input :disabled="isDisabled" type="text" v-model="form.data.seller" />
-      <label>Cessionnaire:</label>
-      <input
-        :disabled="isDisabled"
-        type="text"
-        v-model="form.data.transferee"
-      />
+    <div class="mb-2 flex flex-col" v-if="form.type === 'TRANSFER'">
+      <div class="flex gap-4 mb-2">
+        <label class="font-medium text-lg">Cédant:</label>
+        <input :disabled="isDisabled" type="text" v-model="form.data.seller" />
+      </div>
+      <div class="flex gap-4">
+        <label class="font-medium text-lg">Cessionnaire:</label>
+        <input
+          :disabled="isDisabled"
+          type="text"
+          v-model="form.data.transferee"
+        />
+      </div>
     </div>
 
     <div v-else>
-      <label>Contact:</label>
+      <label class="font-medium text-lg">Contact:</label>
       <input type="text" v-model="form.data.contact" />
     </div>
-
-    <button type="submit">Sauvegarder</button>
-    <button type="button" @click="cancel">Annuler</button>
+    <div class="flex justify-around mt-4">
+      <Button buttonType="primary" type="submit">Sauvegarder</Button>
+      <Button buttonType="cancel" type="button" @click="cancel">Annuler</Button>
+    </div>
   </form>
 </template>
 
 <script lang="ts">
 import { reactive, computed, PropType } from "vue";
 import { Event } from "../../types/event.types";
+import Button from "../Button.vue";
 
 export default {
+  components: { Button },
   props: {
     event: {
       type: Object as PropType<Event | null>,
@@ -74,10 +81,14 @@ export default {
     },
   },
   setup(props, { emit }) {
+    const formatDateForInput = (date: string): string => {
+      return date.split("T")[0];
+    };
+
     const form = reactive<Event>({
       id: props.event ? props.event.id : Date.now().toString(),
       type: props.event ? props.event.type : "ISSUANCE",
-      date: props.event ? props.event.date : "",
+      date: props.event ? formatDateForInput(props.event.date) : "",
       stock: props.event ? props.event.stock : "Actions",
       quantity: props.event ? props.event.quantity : 0,
       unitPrice: props.event ? props.event.unitPrice : 0,
@@ -96,6 +107,8 @@ export default {
             : "",
       },
     });
+
+    console.log("form", form);
 
     const availableStocks = computed(() => {
       switch (form.type) {

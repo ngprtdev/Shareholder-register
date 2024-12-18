@@ -103,10 +103,6 @@ export class EventService {
     }
   }
 
-  async get(id: string): Promise<Event> {
-    throw new Error('Method not implemented.');
-  }
-
   async update(id: string, dto: EventDTO): Promise<Event> {
     const event = await this.eventRepository.findOne({
       where: { id },

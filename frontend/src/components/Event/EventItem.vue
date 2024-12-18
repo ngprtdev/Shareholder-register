@@ -1,10 +1,10 @@
 <template>
-  <tr class="hover:bg-gray-50">
-    <td class="border px-4 py-2">
+  <tr class="shadow-lg rounded-lg space-y-4">
+    <td class="px-4 py-2 rounded-l-lg">
       {{ formattedDate }}
     </td>
 
-    <td class="border px-4 py-2">
+    <td class="px-4 py-2">
       <strong v-if="event.type === 'ISSUANCE'">
         {{
           event.stock === "Actions" || event.stock === "BSA"
@@ -16,38 +16,25 @@
       <strong v-else-if="event.type === 'TRANSFER'">Cession</strong>
     </td>
 
-    <td class="border px-4 py-2">{{ event.stock }}</td>
+    <td class="px-4 py-2">{{ event.stock }}</td>
 
-    <td class="border px-4 py-2">
+    <td class="px-4 py-2">
       <span v-if="event.type === 'TRANSFER'">
-        {{ event.data.seller }} ➡ {{ event.data.transferee }}
+        {{ event.data.seller }} à {{ event.data.transferee }}
       </span>
       <span v-else>{{ event.data.contact }}</span>
     </td>
 
-    <td class="border px-4 py-2">{{ event.quantity }}</td>
+    <td class="px-4 py-2">{{ event.quantity }}</td>
 
-    <td class="border px-4 py-2">{{ event.unitPrice }}€</td>
+    <td class="px-4 py-2">{{ event.unitPrice }}€</td>
 
-    <td class="border px-4 py-2 space-x-2">
-      <button
-        @click="handleViewDetail"
-        class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
-      >
-        Détail
-      </button>
-      <button
-        @click="handleEdit"
-        class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
-      >
-        Modifier
-      </button>
-      <button
-        @click="handleDelete"
-        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
-      >
-        Supprimer
-      </button>
+    <td
+      class="px-4 py-2 flex justify-center items-center gap-4 rounded-r-lg border-l-2"
+    >
+      <Button buttonType="secondary" @click="handleViewDetail">Détail</Button>
+      <Button buttonType="primary" @click="handleEdit">Modifier</Button>
+      <Button buttonType="cancel" @click="handleDelete">Supprimer</Button>
     </td>
   </tr>
 </template>
@@ -55,8 +42,10 @@
 <script lang="ts">
 import { PropType, computed } from "vue";
 import { Event } from "../../types/event.types";
+import Button from "../Button.vue";
 
 export default {
+  components: { Button },
   props: {
     event: {
       type: Object as PropType<Event>,

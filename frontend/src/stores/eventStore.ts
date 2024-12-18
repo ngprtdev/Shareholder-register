@@ -150,7 +150,7 @@ export const useEventStore = defineStore("eventStore", () => {
 
       if (cumulativeStock < newEvent.quantity) {
         alert(
-          `Stock insuffisant pour ${targetContact} dans ShareholdersFollowup : 
+          `Stock insuffisant pour ${targetContact} à la date demandée : 
            Stock disponible : ${cumulativeStock}, 
            Quantité demandée : ${newEvent.quantity}`
         );
@@ -258,6 +258,7 @@ export const useEventStore = defineStore("eventStore", () => {
     const stockType = updatedEvent.stock;
 
     if (updatedEvent.type === "ISSUANCE") {
+      console.log(updatedEvent);
       const targetContact = updatedEvent.data.contact;
 
       if (!targetContact) {
@@ -615,6 +616,31 @@ export const useEventStore = defineStore("eventStore", () => {
     return total ? (totalSharesOwner / total) * 100 : 0;
   };
 
+  const filterEvents = (query: string): Event[] => {
+    const lowerCaseQuery = query.toLowerCase().trim();
+
+    const results = events.filter((event) => {
+      const values = Object.values(event).flatMap((value) => {
+        if (typeof value === "object" && value !== null) {
+          return Object.values(value);
+        }
+        return value;
+      });
+
+      return values.some((value) => {
+        if (typeof value === "string") {
+          return value.toLowerCase().includes(lowerCaseQuery);
+        }
+        if (typeof value === "number") {
+          return value.toString().includes(lowerCaseQuery);
+        }
+        return false;
+      });
+    });
+
+    return results;
+  };
+
   return {
     events,
     shareholders,
@@ -623,6 +649,7 @@ export const useEventStore = defineStore("eventStore", () => {
     addEvent,
     deleteEvent,
     updateEvent,
+    filterEvents,
     calculateFDPercentage,
     calculateNFDPercentage,
   };

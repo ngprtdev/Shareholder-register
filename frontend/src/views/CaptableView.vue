@@ -1,10 +1,10 @@
 <template>
-  <div class="max-w-7xl mx-auto">
+  <div class="max-w-7xl mx-auto mt-8">
     <h1 class="text-2xl font-bold mb-4">Table de Capitalisation</h1>
 
     <table class="w-full border-collapse border border-gray-300">
       <thead>
-        <tr class="bg-gray-100 text-center grid grid-cols-7">
+        <tr class="text-center grid grid-cols-7">
           <th class="border px-4 py-2">Actionnaire</th>
           <th class="border px-4 py-2">Actions</th>
           <th class="border px-4 py-2">BSA</th>

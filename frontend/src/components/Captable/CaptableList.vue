@@ -2,7 +2,7 @@
   <tr
     v-for="row in captable"
     :key="row.contact"
-    class="grid grid-cols-7 text-center border-b hover:bg-gray-50"
+    class="grid grid-cols-7 text-center border-b"
   >
     <td class="px-4 py-2 border">{{ row.contact }}</td>
     <td class="px-4 py-2 border">{{ getTitleQuantity(row, "Actions") }}</td>

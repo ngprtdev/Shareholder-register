@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-7xl mx-auto">
+  <div class="max-w-7xl mx-auto mt-8">
     <h1 class="text-2xl font-bold mb-4">Registre des Actionnaires</h1>
     <RegisterTable :events="sortedEvents" />
   </div>

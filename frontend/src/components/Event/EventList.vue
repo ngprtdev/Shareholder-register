@@ -2,24 +2,29 @@
   <div>
     <p v-if="isLoading">Chargement des événements...</p>
     <p v-if="error" class="text-red-500">{{ error }}</p>
-    <p v-if="events.length === 0">Il n'existe pas d'événement à ce jour.</p>
+    <p v-if="currentEvents.length === 0">
+      Aucun événement ne correspond à votre recherche.
+    </p>
 
-    <table class="table-auto border-collapse w-full border border-gray-300">
+    <table
+      v-if="currentEvents.length > 0"
+      class="table-auto border-collapse w-full"
+    >
       <thead>
-        <tr class="bg-gray-100 text-left">
-          <th class="border px-4 py-2">Date</th>
-          <th class="border px-4 py-2">Type</th>
-          <th class="border px-4 py-2">Nature</th>
-          <th class="border px-4 py-2">Actionnaire(s)</th>
-          <th class="border px-4 py-2">Quantité</th>
-          <th class="border px-4 py-2">Prix unitaire (€)</th>
-          <th class="border px-4 py-2">Actions</th>
+        <tr class="text-center text-lg font-semibold">
+          <th class="px-4 py-2">Date</th>
+          <th class="px-4 py-2">Type</th>
+          <th class="px-4 py-2">Nature</th>
+          <th class="px-4 py-2">Actionnaire(s)</th>
+          <th class="px-4 py-2">Quantité</th>
+          <th class="px-4 py-2">Prix unitaire (€)</th>
+          <th class="px-4 py-2">Actions</th>
         </tr>
       </thead>
 
-      <tbody>
+      <tbody class="text-lg text-center font-medium">
         <EventItem
-          v-for="event in events"
+          v-for="event in currentEvents"
           :key="event.id"
           :event="event"
           @edit="openEditForm"
@@ -28,6 +33,29 @@
         />
       </tbody>
     </table>
+
+    <div
+      v-if="sortedEvents.length > eventsPerPage"
+      class="flex justify-center items-center gap-4 mt-8"
+    >
+      <Button
+        buttonType="primary"
+        @click="handlePreviousPage"
+        :disabled="isPreviousDisabled"
+        className="px-4 py-2"
+      >
+        Page précédente
+      </Button>
+      <p class="font-semibold">{{ currentPage }}</p>
+      <Button
+        buttonType="primary"
+        @click="handleNextPage"
+        :disabled="isNextDisabled"
+        className="px-4 py-2"
+      >
+        Page suivante
+      </Button>
+    </div>
 
     <DetailsCard
       v-if="showDetails && selectedEvent"
@@ -38,22 +66,64 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useEventStore } from "../../stores/eventStore";
 import DetailsCard from "../DetailsCard.vue";
 import EventItem from "./EventItem.vue";
+import Button from "../Button.vue";
 import { Event } from "../../types/event.types";
 
 export default {
-  components: { EventItem, DetailsCard },
-  setup(_, { emit }) {
+  components: { EventItem, Button, DetailsCard },
+  props: {
+    searchQuery: {
+      type: String,
+      required: false,
+      default: "",
+    },
+  },
+  setup(props, { emit }) {
     const eventStore = useEventStore();
     const isLoading = ref(false);
     const error = ref<string | null>(null);
     const showDetails = ref(false);
     const selectedEvent = ref<Event | null>(null);
 
-    const events = eventStore.events;
+    const currentPage = ref(1);
+    const eventsPerPage = 10;
+
+    const filteredEvents = computed(() => {
+      if (!props.searchQuery.trim()) {
+        return eventStore.events;
+      }
+      currentPage.value = 1;
+      return eventStore.filterEvents(props.searchQuery);
+    });
+
+    const sortedEvents = computed(() => {
+      const typeOrder = ["ISSUANCE", "TRANSFER", "EXERCISE"];
+      return [...filteredEvents.value].sort((a, b) => {
+        if (a.date < b.date) return -1;
+        if (a.date > b.date) return 1;
+
+        const firstIndex = typeOrder.indexOf(a.type);
+        const secondIndex = typeOrder.indexOf(b.type);
+
+        return firstIndex - secondIndex;
+      });
+    });
+
+    const currentEvents = computed(() => {
+      const indexOfLastEvent = currentPage.value * eventsPerPage;
+      const indexOfFirstEvent = indexOfLastEvent - eventsPerPage;
+      return sortedEvents.value.slice(indexOfFirstEvent, indexOfLastEvent);
+    });
+
+    const isNextDisabled = computed(() => {
+      return currentPage.value * eventsPerPage >= sortedEvents.value.length;
+    });
+
+    const isPreviousDisabled = computed(() => currentPage.value === 1);
 
     const fetchEvents = async () => {
       isLoading.value = true;
@@ -86,6 +156,14 @@ export default {
       selectedEvent.value = null;
     };
 
+    const handleNextPage = () => {
+      if (!isNextDisabled.value) currentPage.value++;
+    };
+
+    const handlePreviousPage = () => {
+      if (!isPreviousDisabled.value) currentPage.value--;
+    };
+
     onMounted(() => {
       if (!eventStore.isLoaded) {
         fetchEvents();
@@ -93,7 +171,8 @@ export default {
     });
 
     return {
-      events,
+      currentEvents,
+      sortedEvents,
       isLoading,
       error,
       handleDelete,
@@ -102,6 +181,12 @@ export default {
       selectedEvent,
       closeDetailsModal,
       openEditForm,
+      currentPage,
+      eventsPerPage,
+      isNextDisabled,
+      isPreviousDisabled,
+      handleNextPage,
+      handlePreviousPage,
     };
   },
 };

@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" class="min-h-screen bg-gray-100 pb-4">
     <Navbar />
     <main>
       <router-view />
@@ -8,19 +8,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
 import Navbar from "./components/Navbar.vue";
 
-export default defineComponent({
-  name: "App",
+export default {
   components: {
     Navbar,
   },
-});
+};
 </script>
-
-<style>
-main {
-  padding: 2rem;
-}
-</style>

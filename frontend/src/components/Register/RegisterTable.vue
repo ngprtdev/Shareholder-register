@@ -2,7 +2,7 @@
   <div>
     <table class="table-auto border-collapse w-full border border-gray-300">
       <thead>
-        <tr class="bg-gray-100 text-left">
+        <tr class="text-left">
           <th class="border-r px-4 py-2 text-center">DATE</th>
           <th class="border-r px-4 py-2 text-center">ÉVÈNEMENT</th>
 
