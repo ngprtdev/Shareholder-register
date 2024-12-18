@@ -3,8 +3,8 @@
     <div>
       <label>Type:</label>
       <select v-model="form.type">
-        <option value="ISSUANCE">Émission</option>
-        <option value="EXERCISE">Exercice/Conversion</option>
+        <option value="ISSUANCE">Souscription / Attribution</option>
+        <option value="EXERCISE">Exercice / Acquisition</option>
         <option value="TRANSFER">Cession</option>
       </select>
     </div>
@@ -16,7 +16,7 @@
 
     <div>
       <label>Titre:</label>
-      <select v-model="form.stock">
+      <select v-model="form.stock" :disabled="isDisabled">
         <option v-for="option in availableStocks" :key="option" :value="option">
           {{ option }}
         </option>
@@ -111,7 +111,6 @@ export default {
     });
 
     const submitForm = () => {
-
       if (form.type === "TRANSFER") {
         if (!form.data.seller || !form.data.transferee || form.quantity <= 0) {
           console.error("Données invalides pour une cession");

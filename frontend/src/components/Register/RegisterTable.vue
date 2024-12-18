@@ -1,12 +1,25 @@
 <template>
   <div>
-    <ul
-      class="grid grid-cols-5 text-center"
-      v-for="event in sortedEvents"
-      :key="event.id"
-    >
-      <RegisterItem :event="event" />
-    </ul>
+    <table class="table-auto border-collapse w-full border border-gray-300">
+      <thead>
+        <tr class="bg-gray-100 text-left">
+          <th class="border-r px-4 py-2 text-center">DATE</th>
+          <th class="border-r px-4 py-2 text-center">ÉVÈNEMENT</th>
+
+          <th class="border-r px-4 py-2 text-center">ACTIONNAIRE(S)</th>
+          <th class="border-r px-4 py-2 text-center">TYPE</th>
+          <th class="px-4 py-2 text-center">QUANTITÉ</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <RegisterItem
+          v-for="event in sortedEvents"
+          :key="event.id"
+          :event="event"
+        />
+      </tbody>
+    </table>
   </div>
 </template>
 
@@ -23,12 +36,14 @@ export default {
       required: true,
     },
   },
+
   setup(props) {
     const sortedEvents = computed(() =>
       props.events
         .slice()
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     );
+
     return {
       sortedEvents,
     };

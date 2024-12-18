@@ -1,13 +1,15 @@
 <template>
-  <div>
-    <h1 class="text-2xl font-bold mb-4">Gestion des Événements</h1>
+  <div class="max-w-7xl mx-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">Gestion des Événements</h1>
+      <button
+        @click="openCreateForm"
+        class="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600"
+      >
+        Ajouter un événement
+      </button>
+    </div>
     <EventList @handleEdit="openEditForm" @viewDetail="openViewDetailForm" />
-    <button
-      @click="openCreateForm"
-      class="mt-4 px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600"
-    >
-      Créer un événement
-    </button>
 
     <div
       v-if="showForm"

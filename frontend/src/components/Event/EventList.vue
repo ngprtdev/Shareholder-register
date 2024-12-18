@@ -1,17 +1,33 @@
 <template>
   <div>
     <p v-if="isLoading">Chargement des événements...</p>
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-if="events.length === 0">Il n'existe pas d'évènement à ce jour.</p>
-    <ul>
-      <EventItem
-        v-for="event in events"
-        :key="event.id"
-        :event="event"
-        @edit="openEditForm"
-        @viewDetail="handleViewDetail"
-      />
-    </ul>
+    <p v-if="error" class="text-red-500">{{ error }}</p>
+    <p v-if="events.length === 0">Il n'existe pas d'événement à ce jour.</p>
+
+    <table class="table-auto border-collapse w-full border border-gray-300">
+      <thead>
+        <tr class="bg-gray-100 text-left">
+          <th class="border px-4 py-2">Date</th>
+          <th class="border px-4 py-2">Type</th>
+          <th class="border px-4 py-2">Nature</th>
+          <th class="border px-4 py-2">Actionnaire(s)</th>
+          <th class="border px-4 py-2">Quantité</th>
+          <th class="border px-4 py-2">Prix unitaire (€)</th>
+          <th class="border px-4 py-2">Actions</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <EventItem
+          v-for="event in events"
+          :key="event.id"
+          :event="event"
+          @edit="openEditForm"
+          @delete="handleDelete"
+          @viewDetail="handleViewDetail"
+        />
+      </tbody>
+    </table>
 
     <DetailsCard
       v-if="showDetails && selectedEvent"
@@ -22,17 +38,14 @@
 </template>
 
 <script lang="ts">
-import { useEventStore } from "../../stores/eventStore.ts";
-import EventItem from "./EventItem.vue";
-import DetailsCard from "../DetailsCard.vue";
-import { Event } from "../../types/event.types";
 import { ref, onMounted } from "vue";
+import { useEventStore } from "../../stores/eventStore";
+import DetailsCard from "../DetailsCard.vue";
+import EventItem from "./EventItem.vue";
+import { Event } from "../../types/event.types";
 
 export default {
-  components: {
-    EventItem,
-    DetailsCard,
-  },
+  components: { EventItem, DetailsCard },
   setup(_, { emit }) {
     const eventStore = useEventStore();
     const isLoading = ref(false);
@@ -41,9 +54,6 @@ export default {
     const selectedEvent = ref<Event | null>(null);
 
     const events = eventStore.events;
-    const openEditForm = (event: Event) => {
-      emit("handleEdit", event);
-    };
 
     const fetchEvents = async () => {
       isLoading.value = true;
@@ -56,6 +66,14 @@ export default {
       } finally {
         isLoading.value = false;
       }
+    };
+
+    const openEditForm = (event: Event) => {
+      emit("handleEdit", event);
+    };
+
+    const handleDelete = (id: string) => {
+      eventStore.deleteEvent(id);
     };
 
     const handleViewDetail = (event: Event) => {
@@ -73,13 +91,15 @@ export default {
         fetchEvents();
       }
     });
+
     return {
       events,
       isLoading,
       error,
-      selectedEvent,
+      handleDelete,
       handleViewDetail,
       showDetails,
+      selectedEvent,
       closeDetailsModal,
       openEditForm,
     };

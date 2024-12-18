@@ -1,59 +1,90 @@
 <template>
-  <li class="flex gap-4">
-    <div class="flex gap-4" v-if="event?.type === 'ISSUANCE'">
-      <p>{{ event.date.split("T")[0].split("-").reverse().join("-") }}</p>
-      <strong>Souscription</strong> {{ event.stock }} {{ event.data.contact }}
-      {{ event.quantity }} {{ event.unitPrice }}€
-    </div>
-    <div class="flex gap-4" v-else-if="event?.type === 'EXERCISE'">
-      <p>{{ event.date.split("T")[0].split("-").reverse().join("-") }}</p>
-      <strong>Exercice/Conversion</strong>: {{ event.stock }}
-      {{ event.data.contact }} {{ event.quantity }} {{ event.unitPrice }}€
-    </div>
-    <div class="flex gap-4" v-else-if="event?.type === 'TRANSFER'">
-      <p>{{ event.date.split("T")[0].split("-").reverse().join("-") }}</p>
-      <strong>Cession</strong> {{ event.stock }} {{ event.quantity }}
-      {{ event.data.seller }} {{ event.data.transferee }}
-    </div>
-    <button @click="handleViewDetail">Voir le détail</button>
-    <button @click="handleEdit">Modifier</button>
-    <button @click="handleDelete">Supprimer</button>
-  </li>
+  <tr class="hover:bg-gray-50">
+    <td class="border px-4 py-2">
+      {{ formattedDate }}
+    </td>
+
+    <td class="border px-4 py-2">
+      <strong v-if="event.type === 'ISSUANCE'">
+        {{
+          event.stock === "Actions" || event.stock === "BSA"
+            ? "Souscription"
+            : "Attribution"
+        }}
+      </strong>
+      <strong v-else-if="event.type === 'EXERCISE'">Exercice/Conversion</strong>
+      <strong v-else-if="event.type === 'TRANSFER'">Cession</strong>
+    </td>
+
+    <td class="border px-4 py-2">{{ event.stock }}</td>
+
+    <td class="border px-4 py-2">
+      <span v-if="event.type === 'TRANSFER'">
+        {{ event.data.seller }} ➡ {{ event.data.transferee }}
+      </span>
+      <span v-else>{{ event.data.contact }}</span>
+    </td>
+
+    <td class="border px-4 py-2">{{ event.quantity }}</td>
+
+    <td class="border px-4 py-2">{{ event.unitPrice }}€</td>
+
+    <td class="border px-4 py-2 space-x-2">
+      <button
+        @click="handleViewDetail"
+        class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded"
+      >
+        Détail
+      </button>
+      <button
+        @click="handleEdit"
+        class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded"
+      >
+        Modifier
+      </button>
+      <button
+        @click="handleDelete"
+        class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded"
+      >
+        Supprimer
+      </button>
+    </td>
+  </tr>
 </template>
 
 <script lang="ts">
-import { PropType } from "vue";
+import { PropType, computed } from "vue";
 import { Event } from "../../types/event.types";
-import { useEventStore } from "../../stores/eventStore";
 
 export default {
   props: {
-    event: Object as PropType<Event>,
+    event: {
+      type: Object as PropType<Event>,
+      required: true,
+    },
   },
   setup(props, { emit }) {
-    const eventStore = useEventStore();
+    const formattedDate = computed(() =>
+      props.event.date.split("T")[0].split("-").reverse().join("-")
+    );
 
-    const handleDelete = () => {
-      if (!props.event) {
-        console.error("Aucun événement sélectionné pour suppression.");
-        return;
-      }
-
-      eventStore.deleteEvent(props.event.id);
+    const handleViewDetail = () => {
+      emit("viewDetail", props.event);
     };
 
     const handleEdit = () => {
       emit("edit", props.event);
     };
 
-    const handleViewDetail = () => {
-      emit("viewDetail", props.event);
+    const handleDelete = () => {
+      emit("delete", props.event.id);
     };
 
     return {
-      handleDelete,
-      handleEdit,
+      formattedDate,
       handleViewDetail,
+      handleEdit,
+      handleDelete,
     };
   },
 };

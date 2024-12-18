@@ -1,23 +1,25 @@
 <template>
-  <div>
-    <h1>Table de capitalisation</h1>
-    <table>
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Table de Capitalisation</h1>
+
+    <table class="w-full border-collapse border border-gray-300">
       <thead>
-        <tr class="grid grid-cols-7">
-          <th>Contact</th>
-          <th>Actions</th>
-          <th>BSA</th>
-          <th>BSPCE</th>
-          <th>AGA</th>
-          <th>% Fully Diluted</th>
-          <th>% Non-Fully Diluted</th>
+        <tr class="bg-gray-100 text-center grid grid-cols-7">
+          <th class="border px-4 py-2">Actionnaire</th>
+          <th class="border px-4 py-2">Actions</th>
+          <th class="border px-4 py-2">BSA</th>
+          <th class="border px-4 py-2">BSPCE</th>
+          <th class="border px-4 py-2">AGA</th>
+          <th class="border px-4 py-2">% Fully Diluted</th>
+          <th class="border py-2">% Non-Fully Diluted</th>
         </tr>
       </thead>
       <tbody>
         <CaptableList :captable="validatedResults" />
       </tbody>
     </table>
-    <p v-if="validationError" class="text-red-500 mt-[10px]">
+
+    <p v-if="validationError" class="text-red-500 mt-4">
       {{ validationError }}
     </p>
   </div>
@@ -33,7 +35,6 @@ export default {
   components: { CaptableList },
   setup() {
     const eventStore = useEventStore();
-
     const validationError = ref<string | null>(null);
     const validatedResults = ref<any[]>([]);
 
@@ -78,17 +79,12 @@ export default {
       }
     };
 
-    watch(
-      () => eventStore.shareholders,
-      () => {
-        validateCaptable();
-      },
-      { deep: true, immediate: true }
-    );
-
-    onMounted(() => {
-      validateCaptable();
+    watch(() => eventStore.shareholders, validateCaptable, {
+      deep: true,
+      immediate: true,
     });
+
+    onMounted(validateCaptable);
 
     return {
       validatedResults,

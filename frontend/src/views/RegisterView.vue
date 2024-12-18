@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <h1>Registre des Actionnaires</h1>
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Registre des Actionnaires</h1>
     <RegisterTable :events="sortedEvents" />
   </div>
 </template>

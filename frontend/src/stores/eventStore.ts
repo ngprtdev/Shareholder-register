@@ -28,6 +28,8 @@ export const useEventStore = defineStore("eventStore", () => {
 
   const isLoaded = ref(false);
 
+  const ShareholdersFollowup = reactive<{ [key: string]: Array<any> }>({});
+
   const getAllEvents = async () => {
     try {
       const response = await axios.get<Event[]>("http://localhost:3000/events");
@@ -47,11 +49,56 @@ export const useEventStore = defineStore("eventStore", () => {
 
         return firstIndex - secondIndex;
       });
-      console.log("eventsData", eventsData);
 
       eventsData.forEach((event) => {
         events.push(event);
-        console.log("events after every push", events);
+
+        const contact =
+          event.type === "TRANSFER"
+            ? [event.data.seller, event.data.transferee]
+            : [event.data.contact];
+        const stockType = event.stock;
+
+        contact.forEach((c) => {
+          if (!c) return;
+
+          if (!ShareholdersFollowup[c]) {
+            ShareholdersFollowup[c] = [];
+          }
+
+          const newEntry = {
+            date: event.date,
+            Actions: stockType === "Actions" ? event.quantity : 0,
+            BSA: stockType === "BSA" ? event.quantity : 0,
+            BSPCE: stockType === "BSPCE" ? event.quantity : 0,
+            AGA: stockType === "AGA" ? event.quantity : 0,
+          };
+
+          if (event.type === "TRANSFER") {
+            if (c === event.data.seller) {
+              newEntry.Actions = stockType === "Actions" ? -event.quantity : 0;
+              newEntry.BSA = stockType === "BSA" ? -event.quantity : 0;
+              newEntry.BSPCE = stockType === "BSPCE" ? -event.quantity : 0;
+              newEntry.AGA = stockType === "AGA" ? -event.quantity : 0;
+            }
+          } else if (event.type === "EXERCISE") {
+            const decrementEntry = { ...newEntry };
+            decrementEntry[stockType] = -event.quantity;
+            ShareholdersFollowup[c].push(decrementEntry);
+
+            const incrementEntry = { ...newEntry };
+            incrementEntry.Actions = event.quantity;
+            incrementEntry[stockType] = 0;
+            ShareholdersFollowup[c].push(incrementEntry);
+            return;
+          }
+
+          ShareholdersFollowup[c].push(newEntry);
+
+          ShareholdersFollowup[c].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+          );
+        });
 
         updateShareholders(event);
       });
@@ -64,40 +111,102 @@ export const useEventStore = defineStore("eventStore", () => {
   };
 
   const addEvent = async (newEvent: NewEvent) => {
-    console.log("newEvent in addEvent", newEvent);
-    if (
-      (newEvent.type === "EXERCISE" || newEvent.type === "TRANSFER") &&
-      isLoaded
-    ) {
-      const shareholder =
-        newEvent.type === "TRANSFER"
-          ? shareholders.find((s) => s.contact === newEvent.seller)
-          : shareholders.find((s) => s.contact === newEvent.contact);
-
-      if (!shareholder) {
-        console.error(
-          `Aucun actionnaire trouvé correspondant à l'événement :`,
-          newEvent
-        );
-        return;
-      }
-      console.log("shareholder", shareholder);
-      if (shareholder[newEvent.stock] < newEvent.quantity) {
-        console.error(
-          `L'actionnaire ${shareholder.contact} n'a pas assez de ${
-            newEvent.stock
-          }. 
-           Quantité demandée : ${newEvent.quantity}, Quantité détenue : ${
-            shareholder[newEvent.stock]
-          }`
-        );
-        return;
-      }
-    }
-
     if (newEvent.date) {
       newEvent.date = new Date(newEvent.date).toISOString();
     }
+
+    if (newEvent.type === "TRANSFER" || newEvent.type === "EXERCISE") {
+      const targetContact =
+        newEvent.type === "TRANSFER" ? newEvent.seller : newEvent.contact;
+
+      if (!targetContact || !ShareholdersFollowup[targetContact]) {
+        alert(`Actionnaire introuvable : ${targetContact}`);
+        return;
+      }
+
+      const shareholder = shareholders.find((s) => s.contact === targetContact);
+      if (!shareholder) {
+        alert(`Actionnaire introuvable : ${targetContact}`);
+        return;
+      }
+
+      if (shareholder[newEvent.stock] < newEvent.quantity) {
+        alert(
+          `Stock insuffisant pour l'actionnaire ${targetContact} à la date demandée :
+           Stock actuel : ${shareholder[newEvent.stock]}, 
+           Quantité demandée : ${newEvent.quantity}`
+        );
+        return;
+      }
+
+      const relevantEntries = ShareholdersFollowup[targetContact].filter(
+        (entry) => new Date(entry.date) <= new Date(newEvent.date)
+      );
+
+      const cumulativeStock = relevantEntries.reduce(
+        (total, entry) => total + (entry[newEvent.stock] || 0),
+        0
+      );
+
+      if (cumulativeStock < newEvent.quantity) {
+        alert(
+          `Stock insuffisant pour ${targetContact} dans ShareholdersFollowup : 
+           Stock disponible : ${cumulativeStock}, 
+           Quantité demandée : ${newEvent.quantity}`
+        );
+        return;
+      }
+    }
+
+    const contact =
+      newEvent.type === "TRANSFER"
+        ? [newEvent.seller, newEvent.transferee]
+        : [newEvent.contact];
+    const stockType = newEvent.stock;
+
+    contact.forEach((c) => {
+      if (!c) return;
+
+      if (!ShareholdersFollowup[c]) {
+        ShareholdersFollowup[c] = [];
+      }
+
+      const newEntry = {
+        date: newEvent.date,
+        Actions: stockType === "Actions" ? newEvent.quantity : 0,
+        BSA: stockType === "BSA" ? newEvent.quantity : 0,
+        BSPCE: stockType === "BSPCE" ? newEvent.quantity : 0,
+        AGA: stockType === "AGA" ? newEvent.quantity : 0,
+      };
+
+      if (newEvent.type === "TRANSFER") {
+        if (c === newEvent.seller) {
+          newEntry.Actions = stockType === "Actions" ? -newEvent.quantity : 0;
+          newEntry.BSA = stockType === "BSA" ? -newEvent.quantity : 0;
+          newEntry.BSPCE = stockType === "BSPCE" ? -newEvent.quantity : 0;
+          newEntry.AGA = stockType === "AGA" ? -newEvent.quantity : 0;
+        }
+      } else if (newEvent.type === "EXERCISE") {
+        const decrementEntry = { ...newEntry };
+        decrementEntry[stockType] = -newEvent.quantity;
+
+        const incrementEntry = { ...newEntry };
+        incrementEntry.Actions = newEvent.quantity;
+        incrementEntry[stockType] = 0;
+
+        ShareholdersFollowup[c].push(decrementEntry);
+        ShareholdersFollowup[c].push(incrementEntry);
+
+        return;
+      }
+
+      ShareholdersFollowup[c].push(newEntry);
+
+      ShareholdersFollowup[c].sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+    });
+
     try {
       const response = await axios.post(
         "http://localhost:3000/events",
@@ -109,7 +218,7 @@ export const useEventStore = defineStore("eventStore", () => {
 
       updateShareholders(createdEvent);
     } catch (error) {
-      console.error("Erreur lors de l'ajout de l'événement :", error);
+      console.error("Error in addEvent axios.post:", error);
     }
   };
 
@@ -140,42 +249,70 @@ export const useEventStore = defineStore("eventStore", () => {
 
   const updateEvent = async (updatedEvent: Event) => {
     const index = events.findIndex((event) => event.id === updatedEvent.id);
-    if (index !== -1) {
-      const oldEvent = events[index];
+    if (index === -1) {
+      alert(`Impossible de trouver l'événement.`);
+      return;
+    }
 
-      console.log("updatedEvent", updatedEvent);
+    const oldEvent = events[index];
+    const stockType = updatedEvent.stock;
 
-      if (oldEvent.type === "TRANSFER") {
-        const fromShareholder = shareholders.find(
-          (s) => s.contact === oldEvent.data.seller
-        );
-        const oldToShareholder = shareholders.find(
-          (s) => s.contact === oldEvent.data.transferee
-        );
+    if (updatedEvent.type === "ISSUANCE") {
+      const targetContact = updatedEvent.data.contact;
 
-        if (fromShareholder && oldToShareholder) {
-          if (oldEvent.stock === "Actions") {
-            fromShareholder.Actions += oldEvent.quantity;
-            oldToShareholder.Actions -= oldEvent.quantity;
-          } else if (oldEvent.stock === "BSA") {
-            fromShareholder.BSA += oldEvent.quantity;
-            oldToShareholder.BSA -= oldEvent.quantity;
-          } else if (oldEvent.stock === "BSPCE") {
-            fromShareholder.BSPCE += oldEvent.quantity;
-            oldToShareholder.BSPCE -= oldEvent.quantity;
-          } else if (oldEvent.stock === "AGA") {
-            fromShareholder.AGA += oldEvent.quantity;
-            oldToShareholder.AGA -= oldEvent.quantity;
-          }
-        }
-      } else {
-        updateShareholdersOnDelete(oldEvent);
+      if (!targetContact) {
+        alert(`Actionnaire introuvable : ${targetContact}`);
+        return;
       }
 
-      events[index] = { ...oldEvent, ...updatedEvent };
+      const shareholder = shareholders.find((s) => s.contact === targetContact);
+      if (!shareholder) {
+        alert(`Actionnaire introuvable dans shareholders : ${targetContact}`);
+        return;
+      }
+      const difference = oldEvent.quantity - updatedEvent.quantity;
 
-      console.log("updatedEvent", updatedEvent);
+      if (difference > shareholder[stockType]) {
+        alert(
+          `Stock insuffisant pour modifier l'émission :
+           Différence à gérer : ${difference},
+           Stock disponible : ${shareholder[stockType]}`
+        );
+        return;
+      }
+    } else if (
+      updatedEvent.type === "TRANSFER" ||
+      updatedEvent.type === "EXERCISE"
+    ) {
+      const targetContact =
+        updatedEvent.type === "TRANSFER"
+          ? updatedEvent.data.seller
+          : updatedEvent.data.contact;
 
+      if (!targetContact) {
+        alert(`Actionnaire introuvable : ${targetContact}`);
+        return;
+      }
+
+      const shareholder = shareholders.find((s) => s.contact === targetContact);
+      if (!shareholder) {
+        alert(`Actionnaire introuvable dans shareholders : ${targetContact}`);
+        return;
+      }
+
+      const availableStock = shareholder[stockType] + oldEvent.quantity;
+
+      if (updatedEvent.quantity > availableStock) {
+        alert(
+          `Stock insuffisant pour modifier l'événement :
+           Stock disponible (actionnaire + événement) : ${availableStock},
+           Quantité demandée : ${updatedEvent.quantity}`
+        );
+        return;
+      }
+    }
+
+    try {
       const formData = {
         id: updatedEvent.id,
         type: updatedEvent.type,
@@ -187,110 +324,30 @@ export const useEventStore = defineStore("eventStore", () => {
         seller: updatedEvent.data.seller,
         transferee: updatedEvent.data.transferee,
       };
-      try {
-        await axios.put(
-          `http://localhost:3000/events/${updatedEvent.id}`,
-          formData
-        );
 
-        console.log("Événement mis à jour avec succès sur le serveur");
-      } catch (error) {
-        console.error(
-          "Erreur lors de la mise à jour de l'événement sur le serveur :",
-          error
-        );
+      const response = await axios.put(
+        `http://localhost:3000/events/${updatedEvent.id}`,
+        formData
+      );
+
+      const updatedEventData = response.data;
+
+      updateShareholdersOnDelete(oldEvent);
+
+      events[index] = updatedEventData;
+      updateShareholders(updatedEventData);
+
+      events.splice(0, events.length);
+      for (const key in ShareholdersFollowup) {
+        delete ShareholdersFollowup[key];
       }
-
-      if (updatedEvent.type === "TRANSFER") {
-        const fromShareholder = shareholders.find(
-          (s) => s.contact === updatedEvent.data.seller
-        );
-        const newToShareholder = shareholders.find(
-          (s) => s.contact === updatedEvent.data.transferee
-        );
-
-        if (fromShareholder) {
-          if (updatedEvent.stock === "Actions") {
-            fromShareholder.Actions -= updatedEvent.quantity;
-          } else if (updatedEvent.stock === "BSA") {
-            fromShareholder.BSA -= updatedEvent.quantity;
-          } else if (updatedEvent.stock === "BSPCE") {
-            fromShareholder.BSPCE -= updatedEvent.quantity;
-          } else if (updatedEvent.stock === "AGA") {
-            fromShareholder.AGA -= updatedEvent.quantity;
-          }
-        }
-
-        if (oldEvent.data.transferee !== updatedEvent.data.transferee) {
-          const oldToShareholder = shareholders.find(
-            (s) => s.contact === oldEvent.data.transferee
-          );
-
-          if (oldToShareholder) {
-            if (oldEvent.stock === "Actions") {
-              oldToShareholder.Actions -= oldEvent.quantity;
-            } else if (oldEvent.stock === "BSA") {
-              oldToShareholder.BSA -= oldEvent.quantity;
-            } else if (oldEvent.stock === "BSPCE") {
-              oldToShareholder.BSPCE -= oldEvent.quantity;
-            } else if (oldEvent.stock === "AGA") {
-              oldToShareholder.AGA -= oldEvent.quantity;
-            }
-          }
-        }
-
-        if (!newToShareholder) {
-          shareholders.push({
-            id: Date.now().toString(),
-            contact: updatedEvent.data.transferee
-              ? updatedEvent.data.transferee
-              : "",
-            Actions:
-              updatedEvent.stock === "Actions" ? updatedEvent.quantity : 0,
-            BSA: updatedEvent.stock === "BSA" ? updatedEvent.quantity : 0,
-            BSPCE: updatedEvent.stock === "BSPCE" ? updatedEvent.quantity : 0,
-            AGA: updatedEvent.stock === "AGA" ? updatedEvent.quantity : 0,
-          });
-        } else {
-          if (updatedEvent.stock === "Actions") {
-            newToShareholder.Actions += updatedEvent.quantity;
-          } else if (updatedEvent.stock === "BSA") {
-            newToShareholder.BSA += updatedEvent.quantity;
-          } else if (updatedEvent.stock === "BSPCE") {
-            newToShareholder.BSPCE += updatedEvent.quantity;
-          } else if (updatedEvent.stock === "AGA") {
-            newToShareholder.AGA += updatedEvent.quantity;
-          }
-        }
-      } else if (updatedEvent.type === "EXERCISE") {
-        const shareholder = shareholders.find(
-          (s) => s.contact === updatedEvent.data.contact
-        );
-
-        if (shareholder) {
-          const stockType = updatedEvent.stock;
-
-          if (shareholder[stockType] < updatedEvent.quantity) {
-            console.error(
-              `L'actionnaire ${updatedEvent.data.contact} n'a pas assez de ${stockType} pour exercer.`
-            );
-            return;
-          }
-
-          shareholder[stockType] -= updatedEvent.quantity;
-
-          shareholder.Actions += updatedEvent.quantity;
-
-          events[index] = { ...oldEvent, ...updatedEvent };
-        } else {
-          console.error(`Actionnaire ${updatedEvent.data.contact} non trouvé.`);
-        }
-      } else {
-        updateShareholders(updatedEvent);
-      }
-    } else {
+      shareholders.splice(0, shareholders.length);
+      isLoaded.value = false;
+      await getAllEvents();
+    } catch (error) {
       console.error(
-        `Impossible de trouver l'événement avec l'ID ${updatedEvent.id}`
+        "Erreur lors de la mise à jour de l'événement sur le serveur :",
+        error
       );
     }
   };
@@ -335,10 +392,17 @@ export const useEventStore = defineStore("eventStore", () => {
         }
       }
     }
+
+    events.splice(0, events.length);
+    for (const key in ShareholdersFollowup) {
+      delete ShareholdersFollowup[key];
+    }
+    shareholders.splice(0, shareholders.length);
+    isLoaded.value = false;
+    await getAllEvents();
   };
 
   const updateShareholders = (newEvent: Event) => {
-    console.log("newEvent in updateShareholders", newEvent);
     if (newEvent.type === "TRANSFER") {
       const fromShareholder = shareholders.find(
         (s) => s.contact === newEvent.data.seller
@@ -348,9 +412,8 @@ export const useEventStore = defineStore("eventStore", () => {
       );
 
       if (!fromShareholder) {
-        console.error(
-          `Actionnaire vendeur introuvable : ${newEvent.data.seller}`
-        );
+        alert(`Actionnaire vendeur introuvable : ${newEvent.data.seller}`);
+        deleteEvent(newEvent.id);
         return;
       }
 
@@ -378,7 +441,7 @@ export const useEventStore = defineStore("eventStore", () => {
             toShareholder.AGA += newEvent.quantity;
             break;
           default:
-            console.error(`Type d'action non reconnu : ${newEvent.stock}`);
+            alert(`Type d'action non reconnu : ${newEvent.stock}`);
             return;
         }
       }
@@ -397,7 +460,7 @@ export const useEventStore = defineStore("eventStore", () => {
           fromShareholder.AGA -= newEvent.quantity;
           break;
         default:
-          console.error(`Type d'action non reconnu : ${newEvent.stock}`);
+          alert(`Type d'action non reconnu : ${newEvent.stock}`);
           return;
       }
     } else if (newEvent.type === "EXERCISE") {
@@ -409,7 +472,7 @@ export const useEventStore = defineStore("eventStore", () => {
         const stockType = newEvent.stock;
 
         if (shareholder[stockType] < newEvent.quantity) {
-          console.error(
+          alert(
             `L'actionnaire ${newEvent.data.contact} n'a pas assez de ${stockType} pour exercer.`
           );
           return;
@@ -419,7 +482,7 @@ export const useEventStore = defineStore("eventStore", () => {
 
         shareholder.Actions += newEvent.quantity;
       } else {
-        console.error(`Actionnaire ${newEvent.data.contact} non trouvé.`);
+        alert(`Actionnaire ${newEvent.data.contact} non trouvé.`);
       }
     } else {
       const shareholder = shareholders.find(
@@ -450,7 +513,7 @@ export const useEventStore = defineStore("eventStore", () => {
             shareholder.AGA += newEvent.quantity;
             break;
           default:
-            console.error(`Type d'action non reconnu : ${newEvent.stock}`);
+            alert(`Type d'action non reconnu : ${newEvent.stock}`);
         }
       }
     }

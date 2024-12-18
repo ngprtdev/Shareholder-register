@@ -1,22 +1,23 @@
 <template>
   <tr
-    class="grid grid-cols-7 text-center"
     v-for="row in captable"
     :key="row.contact"
+    class="grid grid-cols-7 text-center border-b hover:bg-gray-50"
   >
-    <td>{{ row.contact }}</td>
-    <td>{{ getTitleQuantity(row, "Actions") }}</td>
-    <td>{{ getTitleQuantity(row, "BSA") }}</td>
-    <td>{{ getTitleQuantity(row, "BSPCE") }}</td>
-    <td>{{ getTitleQuantity(row, "AGA") }}</td>
-    <td>{{ row.FDQuantity.toFixed(2) }}%</td>
-    <td>{{ row.NFDQuantity.toFixed(2) }}%</td>
+    <td class="px-4 py-2 border">{{ row.contact }}</td>
+    <td class="px-4 py-2 border">{{ getTitleQuantity(row, "Actions") }}</td>
+    <td class="px-4 py-2 border">{{ getTitleQuantity(row, "BSA") }}</td>
+    <td class="px-4 py-2 border">{{ getTitleQuantity(row, "BSPCE") }}</td>
+    <td class="px-4 py-2 border">{{ getTitleQuantity(row, "AGA") }}</td>
+    <td class="px-4 py-2 border">{{ row.FDQuantity.toFixed(2) }}%</td>
+    <td class="px-4 py-2 border">{{ row.NFDQuantity.toFixed(2) }}%</td>
   </tr>
 </template>
 
 <script lang="ts">
 import { PropType } from "vue";
 import { CaptableRow } from "../../types/captableRow";
+
 export default {
   props: {
     captable: {
@@ -24,7 +25,6 @@ export default {
       required: true,
     },
   },
-
   setup() {
     const getTitleQuantity = (row: any, title: string) => {
       const titleObj = row.titles.find((t: any) => t.name === title);
