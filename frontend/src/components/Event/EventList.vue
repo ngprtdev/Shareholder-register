@@ -2,36 +2,19 @@
   <div>
     <p v-if="isLoading">Chargement des événements...</p>
     <p v-if="error" class="text-red-500">{{ error }}</p>
-    <p v-if="currentEvents.length === 0">
+    <p v-if="currentEvents.length === 0 && searchQuery.trim()">
       Aucun événement ne correspond à votre recherche.
     </p>
-
-    <table
-      v-if="currentEvents.length > 0"
-      class="table-auto border-collapse w-full"
-    >
-      <thead>
-        <tr class="text-center text-lg font-semibold">
-          <th class="px-4 py-2">Date</th>
-          <th class="px-4 py-2">Type</th>
-          <th class="px-4 py-2">Nature</th>
-          <th class="px-4 py-2">Actionnaire(s)</th>
-          <th class="px-4 py-2">Quantité</th>
-          <th class="px-4 py-2">Prix unitaire (€)</th>
-          <th class="px-4 py-2">Actions</th>
-        </tr>
-      </thead>
-
-      <tbody class="text-lg text-center font-medium">
-        <EventItem
-          v-for="event in currentEvents"
-          :key="event.id"
-          :event="event"
-          @edit="openEditForm"
-          @delete="handleDelete"
-          @viewDetail="handleViewDetail"
-        />
-      </tbody>
+    <p v-else-if="currentEvents.length === 0">Vous n'avez aucun évènement.</p>
+    <table v-if="currentEvents.length > 0" class="table-auto border-collapse">
+      <EventItem
+        v-for="event in currentEvents"
+        :key="event.id"
+        :event="event"
+        @edit="openEditForm"
+        @delete="handleDelete"
+        @viewDetail="handleViewDetail"
+      />
     </table>
 
     <div
@@ -90,7 +73,7 @@ export default {
     const selectedEvent = ref<Event | null>(null);
 
     const currentPage = ref(1);
-    const eventsPerPage = 10;
+    const eventsPerPage = 8;
 
     const filteredEvents = computed(() => {
       if (!props.searchQuery.trim()) {

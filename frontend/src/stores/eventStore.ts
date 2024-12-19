@@ -35,6 +35,8 @@ export const useEventStore = defineStore("eventStore", () => {
       const response = await axios.get<Event[]>("http://localhost:3000/events");
       const eventsData = response.data;
 
+      console.log("eventsData", eventsData);
+
       if (!Array.isArray(eventsData)) {
         throw new Error("Le backend n'a pas renvoyé un tableau.");
       }
@@ -102,7 +104,7 @@ export const useEventStore = defineStore("eventStore", () => {
 
         updateShareholders(event);
       });
-
+      console.log("events in eventstore", events);
       isLoaded.value = true;
     } catch (error) {
       console.error("Erreur lors de la récupération des événements :", error);
@@ -358,10 +360,10 @@ export const useEventStore = defineStore("eventStore", () => {
     if (eventIndex !== -1) {
       const deletedEvent = events[eventIndex];
 
-      if (!canDeleteEvent(deletedEvent)) {
+      if (!canDeleteEvent(deletedEvent) && deletedEvent.type === "ISSUANCE") {
         if (
           confirm(
-            `Attention! Il semblerait que des cessions ou exercices soient attachés à cette émission. 
+            `Attention! La suppression de cet évènement entraînera celles des cessions ou exercices attachés à cette émission. 
           Êtes-vous sûr de vouloir supprimer cet événement ?`
           )
         ) {
@@ -421,7 +423,7 @@ export const useEventStore = defineStore("eventStore", () => {
       if (!toShareholder) {
         shareholders.push({
           id: Date.now().toString(),
-          contact: newEvent.data.transferee,
+          contact: newEvent.data.transferee || "",
           Actions: newEvent.stock === "Actions" ? newEvent.quantity : 0,
           BSA: newEvent.stock === "BSA" ? newEvent.quantity : 0,
           BSPCE: newEvent.stock === "BSPCE" ? newEvent.quantity : 0,
@@ -493,7 +495,7 @@ export const useEventStore = defineStore("eventStore", () => {
       if (!shareholder) {
         shareholders.push({
           id: Date.now().toString(),
-          contact: newEvent.data.contact || newEvent.data.transferee,
+          contact: newEvent.data.contact || newEvent.data.transferee || "",
           Actions: newEvent.stock === "Actions" ? newEvent.quantity : 0,
           BSA: newEvent.stock === "BSA" ? newEvent.quantity : 0,
           BSPCE: newEvent.stock === "BSPCE" ? newEvent.quantity : 0,

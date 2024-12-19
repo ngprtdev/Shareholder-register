@@ -6,7 +6,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Rechercher par contact, type, stock ou date"
+          placeholder="Rechercher par contact, titres ou année"
           class="px-4 py-2 border rounded w-96 text-black"
         />
       </div>

@@ -97,7 +97,16 @@ export class EventService {
 
   async getAll(): Promise<Event[]> {
     try {
-      return await this.eventRepository.find();
+      const events = await this.eventRepository.find();
+
+      events.forEach((event) => {
+        const utcDate = new Date(event.date);
+        const utcPlusOneDate = new Date(utcDate.getTime() + 3600000);
+
+        event.date = utcPlusOneDate.toISOString();
+      });
+
+      return events;
     } catch (error) {
       throw new Error(`Failed to fetch events: ${error.message}`);
     }

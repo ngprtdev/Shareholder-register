@@ -2,19 +2,28 @@
   <div class="max-w-7xl mx-auto mt-8">
     <h1 class="text-2xl font-bold mb-4">Table de Capitalisation</h1>
 
-    <table class="w-full border-collapse border border-gray-300">
+    <div v-if="isLoading" class="flex justify-center items-center mt-8">
+      <div
+        class="w-12 h-12 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin"
+      ></div>
+    </div>
+
+    <table
+      v-else
+      class="w-full table-auto border-collapse border-4 border-gray-800 shadow-xl"
+    >
       <thead>
-        <tr class="text-center grid grid-cols-7">
-          <th class="border px-4 py-2">Actionnaire</th>
-          <th class="border px-4 py-2">Actions</th>
-          <th class="border px-4 py-2">BSA</th>
-          <th class="border px-4 py-2">BSPCE</th>
-          <th class="border px-4 py-2">AGA</th>
-          <th class="border px-4 py-2">% Fully Diluted</th>
-          <th class="border py-2">% Non-Fully Diluted</th>
+        <tr class="text-center grid grid-cols-7 text-xl font-medium">
+          <th class="px-4 py-2">Actionnaire</th>
+          <th class="px-4 py-2">Actions</th>
+          <th class="px-4 py-2">BSA</th>
+          <th class="px-4 py-2">BSPCE</th>
+          <th class="px-4 py-2">AGA</th>
+          <th class="px-4 py-2">% Fully Diluted</th>
+          <th class="py-2">% Non-Fully Diluted</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="text-lg font-medium">
         <CaptableList :captable="validatedResults" />
       </tbody>
     </table>
@@ -37,6 +46,7 @@ export default {
     const eventStore = useEventStore();
     const validationError = ref<string | null>(null);
     const validatedResults = ref<any[]>([]);
+    const isLoading = ref(false);
 
     const validateCaptable = async () => {
       try {
@@ -84,9 +94,24 @@ export default {
       immediate: true,
     });
 
-    onMounted(validateCaptable);
+    onMounted(async () => {
+      if (!eventStore.isLoaded) {
+        try {
+          isLoading.value = true;
+          await eventStore.getAllEvents();
+          await validateCaptable();
+        } catch (error) {
+          console.error("Erreur lors du chargement des événements :", error);
+          validationError.value =
+            "Erreur lors du chargement initial des événements.";
+        } finally {
+          isLoading.value = false;
+        }
+      }
+    });
 
     return {
+      isLoading,
       validatedResults,
       validationError,
     };

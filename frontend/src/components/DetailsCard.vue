@@ -25,12 +25,12 @@
 
         <div class="mb-2 flex gap-4" v-if="event.createdAt">
           <strong>Créé le:</strong>
-          {{ event.createdAt.split("T")[0].split("-").reverse().join("-") }}
+          {{ formatDate(event.createdAt) }}
         </div>
 
         <div class="mb-2 flex gap-4" v-if="event.updatedAt">
           <strong>Modifié le:</strong>
-          {{ event.updatedAt.split("T")[0].split("-").reverse().join("-") }}
+          {{ formatDate(event.updatedAt) }}
         </div>
 
         <div class="mb-2 flex gap-4">
@@ -57,7 +57,11 @@
           <strong>Bénéficiaire:</strong> {{ event.data.contact }}
         </div>
 
-        <Button buttonType="cancel" @click="closeModal" className="mt-4">
+        <Button
+          buttonType="cancel"
+          @click="closeModal"
+          className="mt-4 mr-8 ml-auto block "
+        >
           Fermer
         </Button>
       </div>
@@ -81,6 +85,17 @@ export default {
       type: Function as PropType<() => void>,
       required: true,
     },
+  },
+  setup() {
+    const formatDate = (dateString: string): string => {
+      const date = new Date(dateString);
+      date.setUTCDate(date.getUTCDate() + 1);
+      return date.toISOString().split("T")[0].split("-").reverse().join("-");
+    };
+
+    return {
+      formatDate,
+    };
   },
 };
 </script>

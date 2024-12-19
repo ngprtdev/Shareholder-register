@@ -1,42 +1,69 @@
 <template>
-  <tr class="shadow-lg rounded-lg space-y-4">
-    <td class="px-4 py-2 rounded-l-lg">
-      {{ formattedDate }}
-    </td>
+  <tbody class="text-lg text-center font-medium shadow-xl rounded-lg">
+    <tr>
+      <td class="px-4 py-2 rounded-l-lg">
+        <p class="px-4 py-2 font-semibold text-xl">Date</p>
 
-    <td class="px-4 py-2">
-      <strong v-if="event.type === 'ISSUANCE'">
-        {{
-          event.stock === "Actions" || event.stock === "BSA"
-            ? "Souscription"
-            : "Attribution"
-        }}
-      </strong>
-      <strong v-else-if="event.type === 'EXERCISE'">Exercice/Conversion</strong>
-      <strong v-else-if="event.type === 'TRANSFER'">Cession</strong>
-    </td>
+        {{ formattedDate }}
+      </td>
 
-    <td class="px-4 py-2">{{ event.stock }}</td>
+      <td class="px-4 py-2">
+        <p class="px-4 py-2 font-semibold text-xl">Type</p>
 
-    <td class="px-4 py-2">
-      <span v-if="event.type === 'TRANSFER'">
-        {{ event.data.seller }} à {{ event.data.transferee }}
-      </span>
-      <span v-else>{{ event.data.contact }}</span>
-    </td>
+        <p v-if="event.type === 'ISSUANCE'">
+          {{
+            event.stock === "Actions" || event.stock === "BSA"
+              ? "Souscription"
+              : "Attribution"
+          }}
+        </p>
+        <p v-else-if="event.type === 'EXERCISE'">
+          {{
+            event.stock === "BSPCE" || event.stock === "BSA"
+              ? "Exercice"
+              : "Acquisition"
+          }}
+        </p>
+        <p v-else-if="event.type === 'TRANSFER'">Cession</p>
+      </td>
 
-    <td class="px-4 py-2">{{ event.quantity }}</td>
+      <td class="px-4 py-2">
+        <p class="px-4 py-2 font-semibold text-xl">Nature</p>
+        <p>{{ event.stock }}</p>
+      </td>
 
-    <td class="px-4 py-2">{{ event.unitPrice }}€</td>
+      <td class="px-4 py-2">
+        <p class="px-4 py-2 font-semibold text-xl">Actionnaire(s)</p>
 
-    <td
-      class="px-4 py-2 flex justify-center items-center gap-4 rounded-r-lg border-l-2"
-    >
-      <Button buttonType="secondary" @click="handleViewDetail">Détail</Button>
-      <Button buttonType="primary" @click="handleEdit">Modifier</Button>
-      <Button buttonType="cancel" @click="handleDelete">Supprimer</Button>
-    </td>
-  </tr>
+        <span v-if="event.type === 'TRANSFER'">
+          {{ event.data.seller }} à {{ event.data.transferee }}
+        </span>
+        <span v-else>{{ event.data.contact }}</span>
+      </td>
+
+      <td class="px-4 py-2">
+        <p class="px-4 py-2 font-semibold text-xl">Quantité</p>
+        <p>{{ event.quantity }}</p>
+      </td>
+
+      <td class="px-4 py-2">
+        <p class="px-4 py-2 font-semibold text-xl">Prix unitaire</p>
+
+        <p>{{ event.unitPrice }}€</p>
+      </td>
+
+      <td class="px-4 py-2 flex flex-col rounded-r-lg border-l-2">
+        <p class="px-4 py-2 font-semibold text-xl">Actions</p>
+        <div class="flex justify-center items-center gap-4">
+          <Button buttonType="secondary" @click="handleViewDetail"
+            >Détail</Button
+          >
+          <Button buttonType="primary" @click="handleEdit">Modifier</Button>
+          <Button buttonType="cancel" @click="handleDelete">Supprimer</Button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
 </template>
 
 <script lang="ts">

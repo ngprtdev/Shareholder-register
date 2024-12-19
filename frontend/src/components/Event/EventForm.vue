@@ -2,7 +2,7 @@
   <form @submit.prevent="submitForm">
     <div class="mb-2 flex gap-4">
       <label class="font-medium text-lg">Type:</label>
-      <select v-model="form.type">
+      <select class="font-semibold" v-model="form.type">
         <option value="ISSUANCE">Souscription / Attribution</option>
         <option value="EXERCISE">Exercice / Acquisition</option>
         <option value="TRANSFER">Cession</option>
@@ -11,12 +11,12 @@
 
     <div class="mb-2 flex gap-4">
       <label class="font-medium text-lg">Date:</label>
-      <input type="date" v-model="form.date" />
+      <input class="font-semibold" type="date" v-model="form.date" />
     </div>
 
     <div class="mb-2 flex gap-4">
       <label class="font-medium text-lg">Titre:</label>
-      <select v-model="form.stock" :disabled="isDisabled">
+      <select class="font-semibold" v-model="form.stock" :disabled="isDisabled">
         <option v-for="option in availableStocks" :key="option" :value="option">
           {{ option }}
         </option>
@@ -25,33 +25,69 @@
 
     <div class="mb-2 flex gap-4">
       <label class="font-medium text-lg">Quantité:</label>
-      <input type="number" v-model="form.quantity" min="1" />
+      <input
+        class="font-semibold"
+        type="number"
+        v-model="form.quantity"
+        min="1"
+      />
     </div>
 
     <div class="mb-2 flex gap-4">
       <label class="font-medium text-lg">Prix unitaire:</label>
-      <input type="number" v-model="form.unitPrice" min="0" step="0.01" />
+      <input
+        class="font-semibold"
+        type="number"
+        v-model="form.unitPrice"
+        min="0"
+        step="0.01"
+      />
     </div>
 
     <div class="mb-2 flex flex-col" v-if="form.type === 'TRANSFER'">
       <div class="flex gap-4 mb-2">
         <label class="font-medium text-lg">Cédant:</label>
-        <input :disabled="isDisabled" type="text" v-model="form.data.seller" />
+        <input
+          class="font-semibold"
+          :disabled="isDisabled"
+          type="text"
+          v-model="form.data.seller"
+          list="shareholders-list"
+          placeholder="Sélectionnez ou entrez un cédant"
+        />
       </div>
       <div class="flex gap-4">
         <label class="font-medium text-lg">Cessionnaire:</label>
         <input
+          class="font-semibold"
           :disabled="isDisabled"
           type="text"
           v-model="form.data.transferee"
+          list="shareholders-list"
+          placeholder="Sélectionnez ou entrez un cessionnaire"
         />
       </div>
     </div>
 
-    <div v-else>
+    <div v-else class="flex gap-4">
       <label class="font-medium text-lg">Contact:</label>
-      <input type="text" v-model="form.data.contact" />
+      <input
+        class="font-semibold"
+        type="text"
+        v-model="form.data.contact"
+        list="shareholders-list"
+        placeholder="Sélectionnez ou entrez un contact"
+      />
     </div>
+
+    <datalist id="shareholders-list">
+      <option
+        v-for="shareholder in shareholders"
+        :key="shareholder.id"
+        :value="shareholder.contact"
+      />
+    </datalist>
+
     <div class="flex justify-around mt-4">
       <Button buttonType="primary" type="submit">Sauvegarder</Button>
       <Button buttonType="cancel" type="button" @click="cancel">Annuler</Button>
@@ -63,15 +99,12 @@
 import { reactive, computed, PropType } from "vue";
 import { Event } from "../../types/event.types";
 import Button from "../Button.vue";
+import { useEventStore } from "../../stores/eventStore";
 
 export default {
   components: { Button },
   props: {
     event: {
-      type: Object as PropType<Event | null>,
-      required: false,
-    },
-    eventToEdit: {
       type: Object as PropType<Event | null>,
       required: false,
     },
@@ -81,6 +114,8 @@ export default {
     },
   },
   setup(props, { emit }) {
+    const eventStore = useEventStore();
+
     const formatDateForInput = (date: string): string => {
       return date.split("T")[0];
     };
@@ -108,8 +143,6 @@ export default {
       },
     });
 
-    console.log("form", form);
-
     const availableStocks = computed(() => {
       switch (form.type) {
         case "ISSUANCE":
@@ -122,6 +155,8 @@ export default {
           return [];
       }
     });
+
+    const shareholders = computed(() => eventStore.shareholders);
 
     const submitForm = () => {
       if (form.type === "TRANSFER") {
@@ -152,6 +187,7 @@ export default {
     return {
       form,
       availableStocks,
+      shareholders,
       submitForm,
       cancel,
     };
