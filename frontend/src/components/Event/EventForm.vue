@@ -177,6 +177,8 @@ export default {
         seller: form.data.seller,
         transferee: form.data.transferee,
       };
+
+      console.log("formData", formData);
       emit("handleSubmit", formData);
     };
 

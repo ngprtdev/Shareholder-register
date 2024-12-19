@@ -128,6 +128,7 @@ export class EventService {
     event.data = updatedEventData;
     event.stock = dto.stock;
     event.quantity = dto.quantity;
+    event.unitPrice = dto.unitPrice;
 
     await this.eventRepository.save(event);
 

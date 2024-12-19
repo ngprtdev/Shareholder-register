@@ -250,6 +250,8 @@ export const useEventStore = defineStore("eventStore", () => {
   };
 
   const updateEvent = async (updatedEvent: Event) => {
+    console.log("updatedEvent", updatedEvent);
+
     const index = events.findIndex((event) => event.id === updatedEvent.id);
     if (index === -1) {
       alert(`Impossible de trouver l'événement.`);
@@ -334,6 +336,8 @@ export const useEventStore = defineStore("eventStore", () => {
       );
 
       const updatedEventData = response.data;
+
+      console.log("updatedEventData from backend", updatedEventData);
 
       updateShareholdersOnDelete(oldEvent);
 
