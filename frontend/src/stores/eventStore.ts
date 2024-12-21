@@ -35,8 +35,6 @@ export const useEventStore = defineStore("eventStore", () => {
       const response = await axios.get<Event[]>("http://localhost:3000/events");
       const eventsData = response.data;
 
-      console.log("eventsData", eventsData);
-
       if (!Array.isArray(eventsData)) {
         throw new Error("Le backend n'a pas renvoyé un tableau.");
       }
@@ -104,7 +102,6 @@ export const useEventStore = defineStore("eventStore", () => {
 
         updateShareholders(event);
       });
-      console.log("events in eventstore", events);
       isLoaded.value = true;
     } catch (error) {
       console.error("Erreur lors de la récupération des événements :", error);
@@ -250,8 +247,6 @@ export const useEventStore = defineStore("eventStore", () => {
   };
 
   const updateEvent = async (updatedEvent: Event) => {
-    console.log("updatedEvent", updatedEvent);
-
     const index = events.findIndex((event) => event.id === updatedEvent.id);
     if (index === -1) {
       alert(`Impossible de trouver l'événement.`);
@@ -262,7 +257,6 @@ export const useEventStore = defineStore("eventStore", () => {
     const stockType = updatedEvent.stock;
 
     if (updatedEvent.type === "ISSUANCE") {
-      console.log(updatedEvent);
       const targetContact = updatedEvent.data.contact;
 
       if (!targetContact) {
@@ -336,8 +330,6 @@ export const useEventStore = defineStore("eventStore", () => {
       );
 
       const updatedEventData = response.data;
-
-      console.log("updatedEventData from backend", updatedEventData);
 
       updateShareholdersOnDelete(oldEvent);
 

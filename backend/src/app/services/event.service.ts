@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { EventDTO } from '../dto/event.dto';
 import { Event } from '../entities/event.entity';
+import { Transaction } from '../entities/transaction.entity';
 import { EventType } from '../enums/eventType.enum';
 import { TransactionService } from './transaction.service';
 import { TransactionType } from '../enums/transactionType.enum';
@@ -12,6 +13,8 @@ export class EventService {
   constructor(
     @InjectRepository(Event)
     private readonly eventRepository: Repository<Event>,
+    @InjectRepository(Transaction)
+    private readonly transactionRepository: Repository<Transaction>,
     @Inject(forwardRef(() => TransactionService))
     private readonly transactionService: TransactionService,
   ) {}
@@ -115,6 +118,7 @@ export class EventService {
   async update(id: string, dto: EventDTO): Promise<Event> {
     const event = await this.eventRepository.findOne({
       where: { id },
+      relations: ['transactions'],
     });
 
     if (!event) {
@@ -129,6 +133,56 @@ export class EventService {
     event.stock = dto.stock;
     event.quantity = dto.quantity;
     event.unitPrice = dto.unitPrice;
+
+    for (const transaction of event.transactions) {
+      transaction.date = dto.date;
+      transaction.stock = dto.stock;
+      transaction.quantity = dto.quantity;
+
+      if (dto.type === 'TRANSFER') {
+        transaction.contact =
+          transaction.type === TransactionType.DEBIT
+            ? dto.seller
+            : dto.transferee;
+      } else if (dto.type === 'EXERCISE') {
+        transaction.contact = dto.contact;
+        transaction.stock =
+          transaction.type === TransactionType.CREDIT ? 'Actions' : dto.stock;
+      } else if (dto.type === 'ISSUANCE') {
+        transaction.contact = dto.contact;
+      }
+
+      await this.transactionRepository.save(transaction);
+    }
+
+    if (dto.type === 'TRANSFER' && event.transactions.length < 2) {
+      await this.transactionService.createMirrorTransaction(
+        {
+          date: dto.date,
+          type: TransactionType.CREDIT,
+          contact: dto.transferee,
+          stock: dto.stock,
+          quantity: dto.quantity,
+        },
+        dto.transferee,
+        event,
+      );
+    } else if (
+      dto.type === 'EXERCISE' &&
+      !event.transactions.find((t) => t.stock === 'Actions')
+    ) {
+      await this.transactionService.createMirrorTransaction(
+        {
+          date: dto.date,
+          type: TransactionType.CREDIT,
+          contact: dto.contact,
+          stock: 'Actions',
+          quantity: dto.quantity,
+        },
+        dto.contact,
+        event,
+      );
+    }
 
     await this.eventRepository.save(event);
 

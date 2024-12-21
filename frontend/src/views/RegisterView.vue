@@ -9,15 +9,17 @@
     </div>
 
     <div v-else>
-      <RegisterTable :events="sortedEvents" />
+      <RegisterTable :events="sortedRegisterItems" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useEventStore } from "../stores/eventStore.ts";
+import { RegisterRow } from "../types/registerRow.ts";
 import RegisterTable from "../components/Register/RegisterTable.vue";
+import axios from "axios";
 
 export default {
   components: { RegisterTable },
@@ -25,10 +27,10 @@ export default {
     const eventStore = useEventStore();
     const isLoading = ref(false);
 
-    const events = eventStore.events;
+    const registerItems = ref<RegisterRow[]>([]);
 
-    const sortedEvents = computed(() =>
-      events
+    const sortedRegisterItems = computed(() =>
+      registerItems.value
         .slice()
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     );
@@ -37,9 +39,9 @@ export default {
       if (!eventStore.isLoaded) {
         try {
           isLoading.value = true;
-          await eventStore.getAllEvents();
+          await fetchRegisterData();
         } catch (error) {
-          console.error("Erreur lors du chargement des événements :", error);
+          console.error("Erreur lors du chargement du registre :", error);
         } finally {
           isLoading.value = false;
         }
@@ -48,8 +50,31 @@ export default {
       }
     });
 
+    watch(
+      () => eventStore.events,
+      async () => {
+        await fetchRegisterData();
+      },
+      { deep: true }
+    );
+
+    const fetchRegisterData = async () => {
+      isLoading.value = true;
+      try {
+        const response = await axios.get("http://localhost:3000/register");
+        const registerTable = response.data;
+
+        registerItems.value = registerTable;
+      } catch (err) {
+        console.error("Erreur lors de la récupération des données :", err);
+      } finally {
+        isLoading.value = false;
+      }
+    };
+    fetchRegisterData();
+
     return {
-      sortedEvents,
+      sortedRegisterItems,
       isLoading,
     };
   },

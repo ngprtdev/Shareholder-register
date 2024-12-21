@@ -178,7 +178,6 @@ export default {
         transferee: form.data.transferee,
       };
 
-      console.log("formData", formData);
       emit("handleSubmit", formData);
     };
 

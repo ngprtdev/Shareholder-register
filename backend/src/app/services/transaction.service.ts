@@ -38,7 +38,9 @@ export class TransactionService {
   }
 
   async getAll(): Promise<Transaction[]> {
-    throw new Error('Method not implemented.');
+    return this.transactionRepository.find({
+      relations: ['event'],
+    });
   }
 
   async getByContact(): Promise<Transaction[]> {

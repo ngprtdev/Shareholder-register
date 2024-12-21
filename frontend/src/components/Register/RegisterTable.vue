@@ -7,7 +7,8 @@
         <tr class="text-xl">
           <th class="px-4 py-2 text-center">DATE</th>
           <th class="px-4 py-2 text-center">ÉVÈNEMENT</th>
-          <th class="px-4 py-2 text-center">ACTIONNAIRE(S)</th>
+          <th class="px-4 py-2 text-center">DEBIT</th>
+          <th class="px-4 py-2 text-center">CREDIT</th>
           <th class="px-4 py-2 text-center">TYPE</th>
           <th class="px-4 py-2 text-center">QUANTITÉ</th>
         </tr>
@@ -48,14 +49,14 @@
 <script lang="ts">
 import { computed, ref, PropType } from "vue";
 import RegisterItem from "./RegisterItem.vue";
-import { Event } from "../../types/event.types";
 import Button from "../Button.vue";
+import { RegisterRow } from "../../types/registerRow";
 
 export default {
   components: { RegisterItem, Button },
   props: {
     events: {
-      type: Array as PropType<Event[]>,
+      type: Array as PropType<RegisterRow[]>,
       required: true,
     },
   },

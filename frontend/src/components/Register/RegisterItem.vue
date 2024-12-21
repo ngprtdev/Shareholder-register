@@ -7,28 +7,30 @@
     <td class="px-4 py-2">
       <p
         v-if="
-          event?.type === 'ISSUANCE' &&
+          event?.eventType === 'ISSUANCE' &&
           event?.stock !== 'BSPCE' &&
           event?.stock !== 'AGA'
         "
       >
         SOUSCRIPTION
       </p>
-      <p v-else-if="event?.type === 'ISSUANCE'">ATTRIBUTION</p>
-      <p v-if="event?.type === 'EXERCISE' && event?.stock === 'AGA'">
+      <p v-else-if="event?.eventType === 'ISSUANCE'">ATTRIBUTION</p>
+      <p v-if="event?.eventType === 'EXERCISE' && event?.stock === 'AGA'">
         ACQUISITION
       </p>
-      <p v-else-if="event?.type === 'EXERCISE'">EXERCICE</p>
-      <p v-if="event?.type === 'TRANSFER'">CESSION</p>
+      <p v-else-if="event?.eventType === 'EXERCISE'">EXERCICE</p>
+      <p v-if="event?.eventType === 'TRANSFER'">CESSION</p>
     </td>
 
     <td class="px-4 py-2">
-      <div v-if="event?.type === 'TRANSFER'" class="flex justify-center gap-2">
-        <div><strong>CÉDANT :</strong> {{ event?.data.seller }}</div>
-        <div><strong>CESSIONNAIRE :</strong> {{ event?.data.transferee }}</div>
+      <div class="flex justify-center gap-2">
+        <div>{{ event?.debtor ? event?.debtor : "-" }}</div>
       </div>
-      <div v-else>
-        <strong>BÉNÉFICIAIRE :</strong> {{ event?.data.contact }}
+    </td>
+
+    <td class="px-4 py-2">
+      <div class="flex justify-center gap-2">
+        <div>{{ event?.creditor ? event?.creditor : "-" }}</div>
       </div>
     </td>
 
@@ -40,11 +42,11 @@
 
 <script lang="ts">
 import { PropType } from "vue";
-import { Event } from "../../types/event.types";
+import { RegisterRow } from "../../types/registerRow";
 
 export default {
   props: {
-    event: Object as PropType<Event>,
+    event: Object as PropType<RegisterRow>,
   },
 };
 </script>
