@@ -21,6 +21,11 @@ export class StockRegisterService {
           );
         }
 
+        const utcDate = new Date(transaction.date);
+        const utcPlusOneDate = new Date(utcDate.getTime() + 3600000);
+
+        transaction.date = utcPlusOneDate.toISOString();
+
         return {
           id: transaction.id,
           date: transaction.date,
